@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculadora Mejorada</title>
+<style>
+    :root {
+        --bg-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --calc-bg: rgba(255, 255, 255, 0.1);
+        --display-bg: rgba(0, 0, 0, 0.3);
+        --btn-bg: rgba(255, 255, 255, 0.2);
+        --btn-hover: rgba(255, 255, 255, 0.3);
+        --text-color: white;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg-color: linear-gradient(135deg, #111, #333);
+            --calc-bg: rgba(0, 0, 0, 0.3);
+            --display-bg: rgba(255, 255, 255, 0.1);
+            --btn-bg: rgba(255, 255, 255, 0.1);
+            --btn-hover: rgba(255, 255, 255, 0.2);
+            --text-color: #eee;
+        }
+    }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        font-family: Arial, sans-serif;
+        background: var(--bg-color);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+    .calculator {
+        background: var(--calc-bg);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+    .history {
+        height: 20px;
+        color: var(--text-color);
+        text-align: right;
+        opacity: 0.6;
+        font-size: 0.9em;
+        user-select: none;
+    }
+    .display {
+        height: 60px;
+        background: var(--display-bg);
+        color: var(--text-color);
+        font-size: 1.8em;
+        text-align: right;
+        border-radius: 10px;
+        padding: 10px;
+        user-select: all;
+        cursor: pointer;
+    }
+    .buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    button {
+        height: 60px;
+        font-size: 1.2em;
+        color: var(--text-color);
+        background: var(--btn-bg);
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.1s ease, background 0.3s ease;
+    }
+    button:hover {
+        background: var(--btn-hover);
+    }
+    button:active {
+        transform: scale(0.95);
+    }
+    .operator { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+    .equals { background: linear-gradient(135deg, #00b894, #00a085); }
+    .clear { background: linear-gradient(135deg, #fdcb6e, #e17055); }
+    .zero { grid-column: span 2; }
+</style>
+</head>
+<body>
+<div class="calculator">
+    <div class="history" id="history"></div>
+    <div class="display" id="display" onclick="copyToClipboard()">0</div>
+    <div class="buttons">
+        <button class="clear" onclick="clearDisplay()">C</button>
+        <button class="clear" onclick="deleteLast()">←</button>
+        <button class="operator" onclick="appendToDisplay('%')">%</button>
+        <button class="operator" onclick="appendToDisplay('/')">/</button>
+        <button onclick="appendToDisplay('7')">7</button>
+        <button onclick="appendToDisplay('8')">8</button>
+        <button onclick="appendToDisplay('9')">9</button>
+        <button class="operator" onclick="appendToDisplay('*')">×</button>
+        <button onclick="appendToDisplay('4')">4</button>
+        <button onclick="appendToDisplay('5')">5</button>
+        <button onclick="appendToDisplay('6')">6</button>
+        <button class="operator" onclick="appendToDisplay('-')">-</button>
+        <button onclick="appendToDisplay('1')">1</button>
+        <button onclick="appendToDisplay('2')">2</button>
+        <button onclick="appendToDisplay('3')">3</button>
+        <button class="operator" onclick="appendToDisplay('+')">+</button>
+        <button class="zero" onclick="appendToDisplay('0')">0</button>
+        <button onclick="appendToDisplay('.')">.</button>
+        <button class="equals" onclick="calculate()">=</button>
+    </div>
+</div>
+<script>
+let display = document.getElementById('display');
+let history = document.getElementById('history');
+let currentInput = '';
+let resultDisplayed = false;
+
+function vibrate() {
+    if (navigator.vibrate) navigator.vibrate(10);
+}
+function appendToDisplay(value) {
+    vibrate();
+    if (resultDisplayed) {
+        if ('+-*/%'.includes(value)) {
+            currentInput = display.textContent + value;
+        } else {
+            currentInput = value;
+        }
+        resultDisplayed = false;
+    } else {
+        if (value === '.' && currentInput.slice(-1) === '.') return;
+        if (value === '.' && currentInput.split(/[-+*/%]/).pop().includes('.')) return;
+        currentInput += value;
+    }
+    display.textContent = currentInput;
+}
+function calculate() {
+    vibrate();
+    try {
+        let expression = currentInput.replace('%', '/100');
+        let result = eval(expression);
+        if (!isFinite(result)) throw new Error('Error');
+        history.textContent = currentInput + ' =';
+        display.textContent = result;
+        currentInput = result.toString();
+        resultDisplayed = true;
+    } catch {
+        display.textContent = 'Error';
+        currentInput = '';
+    }
+}
+function clearDisplay() {
+    vibrate();
+    currentInput = '';
+    display.textContent = '0';
+    history.textContent = '';
+}
+function deleteLast() {
+    vibrate();
+    currentInput = currentInput.slice(0, -1);
+    display.textContent = currentInput || '0';
+}
+function copyToClipboard() {
+    navigator.clipboard.writeText(display.textContent).then(() => {
+        history.textContent = 'Copiado ✔';
+        setTimeout(() => history.textContent = '', 1000);
+    });
+}
+</script>
+</body>
+</html>
